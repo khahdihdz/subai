@@ -18,10 +18,12 @@ unset($_envFile, $_line, $_k, $_v);
 define('ASSEMBLYAI_API_KEY', getenv('ASSEMBLYAI_API_KEY') ?: '');
 define('GEMINI_API_KEY',     getenv('GEMINI_API_KEY')     ?: '');
 
-// Render.com: dùng /tmp vì container filesystem read-only ngoại trừ /tmp
-$_baseDir = (is_writable('/tmp') && php_uname('s') !== 'Windows NT')
-    ? '/tmp/subai_'
-    : __DIR__ . '/';
+// Chọn base dir: ưu tiên /tmp (Render), fallback về thư mục app
+if (PHP_OS_FAMILY !== 'Windows' && is_dir('/tmp')) {
+    $_baseDir = '/tmp/subai_';
+} else {
+    $_baseDir = __DIR__ . '/';
+}
 define('UPLOAD_DIR', $_baseDir . 'uploads/');
 define('TMP_DIR',    $_baseDir . 'tmp/');
 unset($_baseDir);
@@ -57,9 +59,18 @@ $LANG_NAMES_VI = [
 ];
 
 // Đảm bảo thư mục tồn tại
-foreach ([UPLOAD_DIR, TMP_DIR] as $dir) {
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
+// Tạo thư mục runtime — bắt buộc phải tồn tại trước khi xử lý request
+foreach ([UPLOAD_DIR, TMP_DIR] as $_dir) {
+    if (!is_dir($_dir)) {
+        @mkdir($_dir, 0777, true);
+    }
+    // Nếu vẫn không tạo được, thử fallback về /tmp trực tiếp
+    if (!is_dir($_dir)) {
+        $fallback = '/tmp/' . basename($_dir) . '_' . md5($_dir);
+        @mkdir($fallback, 0777, true);
+    }
 }
+unset($_dir, $fallback);
 
 function jsonResponse(array $data, int $code = 200): void {
     http_response_code($code);
