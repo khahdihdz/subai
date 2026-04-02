@@ -52,21 +52,22 @@ if (!move_uploaded_file($file['tmp_name'], $savePath)) {
     jsonResponse(['error' => 'Không thể lưu file'], 500);
 }
 
-// Upload lên AssemblyAI CDN
-$fp      = fopen($savePath, 'rb');
+// Upload lên AssemblyAI CDN (stream file, không load vào RAM)
+$fp       = fopen($savePath, 'rb');
 $fileSize = filesize($savePath);
 
 $ch = curl_init(ASSEMBLYAI_BASE . '/upload');
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => fread($fp, $fileSize),
+    CURLOPT_PUT            => true,
+    CURLOPT_INFILE         => $fp,
+    CURLOPT_INFILESIZE     => $fileSize,
     CURLOPT_HTTPHEADER     => [
         'Authorization: ' . ASSEMBLYAI_API_KEY,
         'Content-Type: application/octet-stream',
-        'Transfer-Encoding: chunked',
+        'Content-Length: ' . $fileSize,
     ],
-    CURLOPT_TIMEOUT        => 300,
+    CURLOPT_TIMEOUT        => 600,
     CURLOPT_SSL_VERIFYPEER => false,
 ]);
 $res  = curl_exec($ch);
@@ -77,7 +78,12 @@ fclose($fp);
 
 if ($err || $code !== 200) {
     @unlink($savePath);
-    jsonResponse(['error' => "AssemblyAI upload lỗi ($code): $err. Kiểm tra API key."], 500);
+    $detail = '';
+    if ($res) {
+        $parsed = json_decode($res, true);
+        $detail = $parsed['error'] ?? $res;
+    }
+    jsonResponse(['error' => "AssemblyAI upload lỗi (HTTP $code): " . ($err ?: $detail)], 500);
 }
 
 $data = json_decode($res, true);

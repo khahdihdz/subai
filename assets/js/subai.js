@@ -45,8 +45,8 @@ uploadZone.addEventListener('drop', e => {
   e.preventDefault();
   uploadZone.classList.remove('drag-over');
   const f = e.dataTransfer.files[0];
-  if (f && f.type.startsWith('video/')) handleFile(f);
-  else toast('⚠️ Vui lòng chọn file video hợp lệ', true);
+  if (f && (f.type.startsWith('video/') || f.type.startsWith('audio/'))) handleFile(f);
+  else toast('⚠️ Vui lòng chọn file video hoặc audio hợp lệ', true);
 });
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
