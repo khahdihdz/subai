@@ -1,6 +1,18 @@
 <?php
 // api/upload.php — Nhận video từ browser, lưu local, trả uid ngay
 // Bước upload lên AssemblyAI CDN được tách sang api/push.php
+
+// Đảm bảo luôn trả JSON dù có lỗi PHP
+ini_set('display_errors', '0');
+header('Content-Type: application/json; charset=utf-8');
+register_shutdown_function(function() {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        http_response_code(500);
+        echo json_encode(['error' => 'PHP fatal: ' . $e['message'] . ' line ' . $e['line']]);
+    }
+});
+
 require_once __DIR__ . '/../config.php';
 
 header('Access-Control-Allow-Origin: *');

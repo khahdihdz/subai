@@ -1,4 +1,13 @@
 <?php
+ini_set('display_errors', '0');
+header('Content-Type: application/json; charset=utf-8');
+register_shutdown_function(function() {
+    $e = error_get_last();
+    if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR])) {
+        if (!headers_sent()) http_response_code(500);
+        echo json_encode(['error' => 'PHP fatal: ' . $e['message']]);
+    }
+});
 // api/push.php — Đẩy file đã lưu local lên AssemblyAI CDN
 // Được gọi từ JS sau khi upload.php hoàn tất (XHR progress xong)
 require_once __DIR__ . '/../config.php';

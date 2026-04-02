@@ -16,35 +16,34 @@ RUN { \
     echo "upload_tmp_dir = /tmp"; \
 } > /usr/local/etc/php/conf.d/subai.ini
 
-# Đổi port 80 → 10000
-RUN sed -i 's/Listen 80/Listen 10000/' /etc/apache2/ports.conf && \
-    sed -i 's/<VirtualHost \*:80>/<VirtualHost *:10000>/' /etc/apache2/sites-enabled/000-default.conf
-
-# Trỏ DocumentRoot về /var/www/html (mặc định của apache image)
-# Sẽ copy code vào đó
+# Enable modules
 RUN a2enmod rewrite headers
 
-# Cấu hình VirtualHost — DocumentRoot /var/www/html, cho phép AllowOverride
+# Đổi port 80 → 10000
+RUN sed -i 's/Listen 80/Listen 10000/g' /etc/apache2/ports.conf
+
+# Viết VirtualHost sạch
 RUN printf '<VirtualHost *:10000>\n\
     DocumentRoot /var/www/html\n\
+    DirectoryIndex index.php index.html\n\
     <Directory /var/www/html>\n\
         Options -Indexes +FollowSymLinks\n\
         AllowOverride All\n\
         Require all granted\n\
     </Directory>\n\
-    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
-    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+    ErrorLog /dev/stderr\n\
+    CustomLog /dev/stdout combined\n\
 </VirtualHost>\n' > /etc/apache2/sites-enabled/000-default.conf
 
 WORKDIR /var/www/html
 COPY . .
 RUN chown -R www-data:www-data /var/www/html
 
-# Tạo thư mục /tmp lúc runtime
+# Runtime script
 RUN printf '#!/bin/sh\n\
 mkdir -p /tmp/subai_uploads /tmp/subai_tmp\n\
 chmod 777 /tmp/subai_uploads /tmp/subai_tmp\n\
-apache2-foreground\n' > /start.sh && chmod +x /start.sh
+exec apache2-foreground\n' > /start.sh && chmod +x /start.sh
 
 EXPOSE 10000
 CMD ["/start.sh"]
