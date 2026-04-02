@@ -93,25 +93,25 @@ async function runPipeline() {
   startTimer();
 
   try {
-    // ── Step 1: Upload ──────────────────────────────────────
+    // ── Step 1a: Upload lên server (XHR có progress thật) ──
     stepActivate(1, 'Đang upload lên server…');
     showStepBar(1);
     const uploadData = await uploadVideoXHR(pct => {
       setStepBar(1, pct);
-      setProgress(pct * 0.18); // 0→18%
-      setEta('Đang tải file lên…');
+      setProgress(pct * 0.12); // 0→12%
+      setEta('Đang tải file lên server…');
     });
-    state.uid       = uploadData.uid;
-    state.uploadUrl = uploadData.upload_url;
-    stepDone(1, 'Upload xong', fmtFileSize(state.videoFile.size));
-    setProgress(18);
+    state.uid = uploadData.uid;
+    stepDone(1, 'Đã lưu lên server', fmtFileSize(state.videoFile.size));
+    setProgress(12);
 
-    // ── Step 2: Submit transcription ────────────────────────
-    stepActivate(2, 'Đang gửi yêu cầu…');
-    setEta('Kết nối AssemblyAI…');
-    const txData = await submitTranscription();
-    state.transcriptId = txData.transcript_id;
-    stepDone(2, 'Đã xếp hàng chờ xử lý');
+    // ── Step 2: Push lên AssemblyAI CDN ─────────────────────
+    stepActivate(2, 'Đang gửi lên AssemblyAI CDN…');
+    setEta('Kết nối AssemblyAI CDN…');
+    animateStepPulse(2);
+    const pushData = await pushToAssemblyAI(state.uid);
+    state.uploadUrl = pushData.upload_url;
+    stepDone(2, 'Đã upload lên AssemblyAI');
     setProgress(24);
 
     // ── Step 3: Poll ────────────────────────────────────────
@@ -288,6 +288,24 @@ function uploadVideoXHR(onProgress) {
     xhr.onerror = () => reject(new Error('Lỗi mạng khi upload'));
     xhr.send(fd);
   });
+}
+
+// Push file từ server lên AssemblyAI CDN
+async function pushToAssemblyAI(uid) {
+  const res = await fetch('api/push.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ uid }),
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || 'Push lên AssemblyAI thất bại');
+  return data;
+}
+
+// Pulse animation cho step node trong khi chờ
+function animateStepPulse(n) {
+  const node = document.getElementById('stepNode' + n);
+  if (node) node.classList.add('pulsing');
 }
 
 async function submitTranscription() {

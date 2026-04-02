@@ -465,3 +465,12 @@ body::before {
   .upload-zone { padding:40px 20px; }
   .btn-export span { display:none; }
 }
+
+/* ── Pulsing step node (waiting for external API) ── */
+@keyframes nodePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139,92,246,.6); }
+  50%       { box-shadow: 0 0 0 8px rgba(139,92,246,0); }
+}
+.step-node.pulsing {
+  animation: nodePulse 1.4s ease-in-out infinite;
+}
