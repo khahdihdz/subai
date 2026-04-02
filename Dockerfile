@@ -16,21 +16,35 @@ RUN { \
     echo "upload_tmp_dir = /tmp"; \
 } > /usr/local/etc/php/conf.d/subai.ini
 
-# Apache: enable mod_rewrite, đổi port sang 10000 (Render yêu cầu)
-RUN a2enmod rewrite && \
-    sed -i 's/Listen 80/Listen 10000/' /etc/apache2/ports.conf && \
-    sed -i 's/:80>/:10000>/' /etc/apache2/sites-enabled/000-default.conf && \
-    sed -i 's|/var/www/html|/app|g' /etc/apache2/sites-enabled/000-default.conf
+# Đổi port 80 → 10000
+RUN sed -i 's/Listen 80/Listen 10000/' /etc/apache2/ports.conf && \
+    sed -i 's/<VirtualHost \*:80>/<VirtualHost *:10000>/' /etc/apache2/sites-enabled/000-default.conf
 
-# Cho phép .htaccess override
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+# Trỏ DocumentRoot về /var/www/html (mặc định của apache image)
+# Sẽ copy code vào đó
+RUN a2enmod rewrite headers
 
-WORKDIR /app
+# Cấu hình VirtualHost — DocumentRoot /var/www/html, cho phép AllowOverride
+RUN printf '<VirtualHost *:10000>\n\
+    DocumentRoot /var/www/html\n\
+    <Directory /var/www/html>\n\
+        Options -Indexes +FollowSymLinks\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+    ErrorLog ${APACHE_LOG_DIR}/error.log\n\
+    CustomLog ${APACHE_LOG_DIR}/access.log combined\n\
+</VirtualHost>\n' > /etc/apache2/sites-enabled/000-default.conf
+
+WORKDIR /var/www/html
 COPY . .
+RUN chown -R www-data:www-data /var/www/html
 
 # Tạo thư mục /tmp lúc runtime
-RUN printf '#!/bin/sh\nmkdir -p /tmp/subai_uploads /tmp/subai_tmp\nchmod 777 /tmp/subai_uploads /tmp/subai_tmp\napache2-foreground\n' \
-    > /start.sh && chmod +x /start.sh
+RUN printf '#!/bin/sh\n\
+mkdir -p /tmp/subai_uploads /tmp/subai_tmp\n\
+chmod 777 /tmp/subai_uploads /tmp/subai_tmp\n\
+apache2-foreground\n' > /start.sh && chmod +x /start.sh
 
 EXPOSE 10000
 CMD ["/start.sh"]
