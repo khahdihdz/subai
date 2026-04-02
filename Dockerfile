@@ -1,6 +1,5 @@
 FROM php:8.2-cli
 
-# Install system deps + PHP extensions
 RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libssl-dev \
@@ -9,21 +8,23 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# PHP config — tăng giới hạn upload
-RUN echo "upload_max_filesize = 500M\n\
-post_max_size = 510M\n\
-max_execution_time = 600\n\
-max_input_time = 600\n\
-memory_limit = 512M\n\
-default_socket_timeout = 600" > /usr/local/etc/php/conf.d/subai.ini
+# PHP config — tăng giới hạn upload & timeout
+RUN { \
+    echo "upload_max_filesize = 512M"; \
+    echo "post_max_size = 520M"; \
+    echo "max_execution_time = 600"; \
+    echo "max_input_time = 600"; \
+    echo "memory_limit = 512M"; \
+    echo "default_socket_timeout = 600"; \
+    echo "upload_tmp_dir = /tmp"; \
+    echo "sys_temp_dir = /tmp"; \
+} > /usr/local/etc/php/conf.d/subai.ini
 
 WORKDIR /app
-
 COPY . .
 
-# Tạo thư mục cần thiết
-RUN mkdir -p uploads tmp && chmod 777 uploads tmp
+# /tmp luôn writable trên Render — không cần tạo uploads/tmp nữa
+RUN mkdir -p /tmp/subai_uploads /tmp/subai_tmp && chmod 777 /tmp/subai_uploads /tmp/subai_tmp
 
 EXPOSE 10000
-
 CMD ["php", "-S", "0.0.0.0:10000", "-t", "."]

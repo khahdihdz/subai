@@ -18,8 +18,13 @@ unset($_envFile, $_line, $_k, $_v);
 define('ASSEMBLYAI_API_KEY', getenv('ASSEMBLYAI_API_KEY') ?: '');
 define('GEMINI_API_KEY',     getenv('GEMINI_API_KEY')     ?: '');
 
-define('UPLOAD_DIR',  __DIR__ . '/uploads/');
-define('TMP_DIR',     __DIR__ . '/tmp/');
+// Render.com: dùng /tmp vì container filesystem read-only ngoại trừ /tmp
+$_baseDir = (is_writable('/tmp') && php_uname('s') !== 'Windows NT')
+    ? '/tmp/subai_'
+    : __DIR__ . '/';
+define('UPLOAD_DIR', $_baseDir . 'uploads/');
+define('TMP_DIR',    $_baseDir . 'tmp/');
+unset($_baseDir);
 define('MAX_SIZE',    500 * 1024 * 1024); // 500MB
 
 define('ASSEMBLYAI_BASE', 'https://api.assemblyai.com/v2');

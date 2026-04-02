@@ -273,19 +273,47 @@ function uploadVideoXHR(onProgress) {
   return new Promise((resolve, reject) => {
     const fd = new FormData();
     fd.append('video', state.videoFile);
+
     const xhr = new XMLHttpRequest();
     xhr.open('POST', 'api/upload.php');
+    xhr.timeout = 300000; // 5 phút
+
+    // Progress thật khi trình duyệt hỗ trợ
     xhr.upload.onprogress = e => {
       if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
     };
+
     xhr.onload = () => {
+      if (xhr.status === 0) {
+        reject(new Error('Mất kết nối đến server')); return;
+      }
+      if (xhr.status >= 400) {
+        let msg = `Server lỗi HTTP ${xhr.status}`;
+        try { const d = JSON.parse(xhr.responseText); msg = d.error || msg; } catch {}
+        reject(new Error(msg)); return;
+      }
       try {
         const data = JSON.parse(xhr.responseText);
         if (!data.success) reject(new Error(data.error || 'Upload thất bại'));
         else resolve(data);
-      } catch { reject(new Error('Phản hồi upload không hợp lệ')); }
+      } catch { reject(new Error('Phản hồi upload không hợp lệ: ' + xhr.responseText.slice(0,200))); }
     };
-    xhr.onerror = () => reject(new Error('Lỗi mạng khi upload'));
+
+    xhr.onerror   = () => reject(new Error('Lỗi mạng — kiểm tra kết nối'));
+    xhr.ontimeout = () => reject(new Error('Upload timeout (5 phút)'));
+
+    // Fake progress nếu trình duyệt không báo progress (mobile Safari, etc.)
+    let fakePct = 0;
+    const fakeTimer = setInterval(() => {
+      if (fakePct < 90) { fakePct += (90 - fakePct) * 0.05; onProgress(fakePct); }
+    }, 800);
+
+    xhr.upload.onprogress = e => {
+      clearInterval(fakeTimer);
+      if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
+    };
+    xhr.upload.onload = () => { clearInterval(fakeTimer); onProgress(99); };
+
     xhr.send(fd);
   });
 }
