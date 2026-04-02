@@ -24,12 +24,10 @@ if (!$uid || !$uploadUrl) {
 
 // Build AssemblyAI request
 $payload = [
-    'audio_url'            => $uploadUrl,
-    'punctuate'            => true,
-    'format_text'          => true,
-    'speaker_labels'       => false,
-    'auto_highlights'      => false,
-    'word_boost'           => [],
+    'audio_url'    => $uploadUrl,
+    'speech_model' => 'universal-2',
+    'punctuate'    => true,
+    'format_text'  => true,
 ];
 
 if (!$autoDetect && isset($ASSEMBLYAI_LANG_MAP[$srcLang])) {
