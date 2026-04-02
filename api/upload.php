@@ -57,36 +57,24 @@ $fileSize = $file['size'];
 $tmpPath  = $file['tmp_name']; // PHP tmp file — dùng trực tiếp, không copy
 
 // ── Stream file từ PHP tmp thẳng lên AssemblyAI CDN ──────────
-$fp = fopen($tmpPath, 'rb');
-if (!$fp) {
-    jsonResponse(['error' => 'Không mở được file tmp'], 500);
-}
-
 $ch = curl_init(ASSEMBLYAI_BASE . '/upload');
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_POST           => true,
-    CURLOPT_READFUNCTION   => function($ch, $fp, $length) { return fread($fp, $length); },
-    CURLOPT_POSTFIELDSIZE  => $fileSize,
+    CURLOPT_POSTFIELDS     => file_get_contents($tmpPath),
     CURLOPT_HTTPHEADER     => [
         'Authorization: ' . ASSEMBLYAI_API_KEY,
         'Content-Type: application/octet-stream',
         'Content-Length: ' . $fileSize,
-        'Transfer-Encoding: chunked',
     ],
-    CURLOPT_INFILE         => $fp,
-    CURLOPT_UPLOAD         => true,   // dùng PUT-style stream (AssemblyAI chấp nhận cả PUT lẫn POST)
-    CURLOPT_CUSTOMREQUEST  => 'POST', // override về POST
     CURLOPT_TIMEOUT        => 600,
     CURLOPT_SSL_VERIFYPEER => false,
-    CURLOPT_BUFFERSIZE     => 1024 * 1024, // 1MB buffer
 ]);
 
 $res  = curl_exec($ch);
 $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $err  = curl_error($ch);
 curl_close($ch);
-fclose($fp);
 
 if ($err || $code !== 200) {
     $detail = '';

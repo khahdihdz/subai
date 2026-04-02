@@ -351,6 +351,7 @@ async function submitTranscription() {
   });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Gửi transcription thất bại');
+  if (!data.transcript_id) throw new Error('AssemblyAI không trả về transcript_id: ' + JSON.stringify(data));
   setProgress(35);
   return data;
 }

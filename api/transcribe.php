@@ -1,37 +1,35 @@
 <?php
 ini_set('display_errors', '0');
-header('Content-Type: application/json; charset=utf-8');
 register_shutdown_function(function() {
     $e = error_get_last();
     if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR])) {
-        if (!headers_sent()) http_response_code(500);
+        if (!headers_sent()) { http_response_code(500); header('Content-Type: application/json'); }
         echo json_encode(['error' => 'PHP fatal: ' . $e['message']]);
     }
 });
-// api/transcribe.php — Gửi job nhận dạng giọng nói lên AssemblyAI
+
 require_once __DIR__ . '/../config.php';
 
 header('Access-Control-Allow-Origin: *');
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(['error' => 'Method not allowed'], 405);
 }
 
-$body = json_decode(file_get_contents('php://input'), true);
-$uid        = trim($body['uid'] ?? '');
-$uploadUrl  = trim($body['upload_url'] ?? '');
-$srcLang    = trim($body['src_lang'] ?? 'auto');
+$body      = json_decode(file_get_contents('php://input'), true);
+$uid       = trim($body['uid']        ?? '');
+$uploadUrl = trim($body['upload_url'] ?? '');
+$srcLang   = trim($body['src_lang']   ?? 'auto');
 $autoDetect = ($srcLang === 'auto');
-
-global $ASSEMBLYAI_LANG_MAP;
-require_once __DIR__ . '/../config.php';
 
 if (!$uid || !$uploadUrl) {
     jsonResponse(['error' => 'Thiếu uid hoặc upload_url'], 400);
 }
 
-// Build AssemblyAI request
+global $ASSEMBLYAI_LANG_MAP;
+
+// Build payload
 $payload = [
     'audio_url'    => $uploadUrl,
     'speech_model' => 'universal-2',
@@ -58,7 +56,7 @@ if ($result['code'] !== 200) {
 
 $data = json_decode($result['body'], true);
 if (empty($data['id'])) {
-    jsonResponse(['error' => 'Không nhận được transcript ID'], 500);
+    jsonResponse(['error' => 'Không nhận được transcript ID. Response: ' . substr($result['body'], 0, 300)], 500);
 }
 
 // Lưu transcript_id vào metadata
@@ -74,5 +72,5 @@ if (file_exists($metaPath)) {
 jsonResponse([
     'success'       => true,
     'transcript_id' => $data['id'],
-    'status'        => $data['status'],
+    'status'        => $data['status'] ?? 'queued',
 ]);
