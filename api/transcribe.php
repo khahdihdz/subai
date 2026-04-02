@@ -32,7 +32,7 @@ global $ASSEMBLYAI_LANG_MAP;
 // Build payload
 $payload = [
     'audio_url'    => $uploadUrl,
-    'speech_model' => 'universal-2',
+    'speech_models' => ['universal-2'],
     'punctuate'    => true,
     'format_text'  => true,
 ];
