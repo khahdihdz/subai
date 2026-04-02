@@ -103,6 +103,7 @@ async function runPipeline() {
     });
     state.uid = uploadData.uid;
     stepDone(1, 'Đã lưu lên server', fmtFileSize(state.videoFile.size));
+    console.log('[SubAI] Upload OK, uid=', state.uid);
     setProgress(12);
 
     // ── Step 2: Push lên AssemblyAI CDN ─────────────────────
@@ -157,8 +158,12 @@ async function runPipeline() {
     stopTimer();
     progressPanel.style.display = 'none';
     processBtn.disabled = false;
-    toast('❌ ' + (err.message || 'Lỗi không xác định'), true);
-    console.error(err);
+    const msg = err.message || 'Lỗi không xác định';
+    toast('❌ ' + msg, true);
+    // Hiện lỗi chi tiết trên UI để dễ debug
+    const errBox = document.getElementById('errorDetail');
+    if (errBox) { errBox.textContent = msg; errBox.style.display = 'block'; }
+    console.error('[SubAI Error]', err);
   }
 }
 
@@ -274,21 +279,32 @@ function uploadVideoXHR(onProgress) {
     const fd = new FormData();
     fd.append('video', state.videoFile);
 
+    // Fake progress timer — tăng dần để UI không đơ khi không có progress event
+    let fakePct = 0;
+    let hasRealProgress = false;
+    const fakeTimer = setInterval(() => {
+      if (!hasRealProgress && fakePct < 85) {
+        fakePct += (85 - fakePct) * 0.06;
+        onProgress(fakePct);
+      }
+    }, 700);
+
+    const done = (fn) => { clearInterval(fakeTimer); fn(); };
+
     const xhr = new XMLHttpRequest();
     xhr.open('POST', 'api/upload.php');
     xhr.timeout = 300000; // 5 phút
 
-    // Progress thật khi trình duyệt hỗ trợ
     xhr.upload.onprogress = e => {
-      if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
+      if (e.lengthComputable) {
+        hasRealProgress = true;
+        onProgress((e.loaded / e.total) * 100);
+      }
     };
 
-    xhr.onload = () => {
-      if (xhr.status === 0) {
-        reject(new Error('Mất kết nối đến server')); return;
-      }
-      if (xhr.status >= 400) {
-        let msg = `Server lỗi HTTP ${xhr.status}`;
+    xhr.onload = () => done(() => {
+      if (xhr.status >= 400 || xhr.status === 0) {
+        let msg = 'Server lỗi HTTP ' + xhr.status;
         try { const d = JSON.parse(xhr.responseText); msg = d.error || msg; } catch {}
         reject(new Error(msg)); return;
       }
@@ -296,23 +312,13 @@ function uploadVideoXHR(onProgress) {
         const data = JSON.parse(xhr.responseText);
         if (!data.success) reject(new Error(data.error || 'Upload thất bại'));
         else resolve(data);
-      } catch { reject(new Error('Phản hồi upload không hợp lệ: ' + xhr.responseText.slice(0,200))); }
-    };
+      } catch {
+        reject(new Error('Phản hồi không hợp lệ: ' + xhr.responseText.slice(0, 300)));
+      }
+    });
 
-    xhr.onerror   = () => reject(new Error('Lỗi mạng — kiểm tra kết nối'));
-    xhr.ontimeout = () => reject(new Error('Upload timeout (5 phút)'));
-
-    // Fake progress nếu trình duyệt không báo progress (mobile Safari, etc.)
-    let fakePct = 0;
-    const fakeTimer = setInterval(() => {
-      if (fakePct < 90) { fakePct += (90 - fakePct) * 0.05; onProgress(fakePct); }
-    }, 800);
-
-    xhr.upload.onprogress = e => {
-      clearInterval(fakeTimer);
-      if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
-    };
-    xhr.upload.onload = () => { clearInterval(fakeTimer); onProgress(99); };
+    xhr.onerror   = () => done(() => reject(new Error('Lỗi mạng — kiểm tra kết nối')));
+    xhr.ontimeout = () => done(() => reject(new Error('Upload timeout (5 phút)')));
 
     xhr.send(fd);
   });

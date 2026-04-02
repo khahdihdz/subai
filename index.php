@@ -416,6 +416,12 @@ if (file_exists($envPath)) {
 <!-- Toast -->
 <div class="toast-custom" id="toastEl"></div>
 
+<!-- Error detail box (debug) -->
+<div id="errorDetail" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;
+  background:#1a0a0a;border:1px solid #c0392b;color:#ff6b6b;padding:12px 14px;
+  border-radius:10px;font-size:12px;font-family:monospace;z-index:9999;
+  word-break:break-word;max-height:120px;overflow-y:auto;"></div>
+
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <!-- App JS -->
