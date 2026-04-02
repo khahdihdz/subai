@@ -1,7 +1,7 @@
-FROM php:8.2-cli
+FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y \
-    libcurl4-openssl-dev libssl-dev unzip curl \
+    libcurl4-openssl-dev libssl-dev \
     && docker-php-ext-install curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -16,12 +16,21 @@ RUN { \
     echo "upload_tmp_dir = /tmp"; \
 } > /usr/local/etc/php/conf.d/subai.ini
 
+# Apache: enable mod_rewrite, đổi port sang 10000 (Render yêu cầu)
+RUN a2enmod rewrite && \
+    sed -i 's/Listen 80/Listen 10000/' /etc/apache2/ports.conf && \
+    sed -i 's/:80>/:10000>/' /etc/apache2/sites-enabled/000-default.conf && \
+    sed -i 's|/var/www/html|/app|g' /etc/apache2/sites-enabled/000-default.conf
+
+# Cho phép .htaccess override
+RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
 WORKDIR /app
 COPY . .
 
-# Startup script: tạo thư mục /tmp lúc runtime (không phải build time)
-RUN printf '#!/bin/sh\nmkdir -p /tmp/subai_uploads /tmp/subai_tmp\nchmod 777 /tmp/subai_uploads /tmp/subai_tmp\nexec php -S 0.0.0.0:10000 -t /app\n' > /start.sh \
-    && chmod +x /start.sh
+# Tạo thư mục /tmp lúc runtime
+RUN printf '#!/bin/sh\nmkdir -p /tmp/subai_uploads /tmp/subai_tmp\nchmod 777 /tmp/subai_uploads /tmp/subai_tmp\napache2-foreground\n' \
+    > /start.sh && chmod +x /start.sh
 
 EXPOSE 10000
 CMD ["/start.sh"]
