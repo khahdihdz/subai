@@ -30,7 +30,7 @@ unset($_baseDir);
 define('MAX_SIZE',    500 * 1024 * 1024); // 500MB
 
 define('ASSEMBLYAI_BASE', 'https://api.assemblyai.com/v2');
-define('GEMINI_BASE',     'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent');
+define('GEMINI_BASE',     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent');
 
 $SUPPORTED_LANGS = [
     'vi' => '🇻🇳 Tiếng Việt',
