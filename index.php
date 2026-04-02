@@ -195,32 +195,115 @@ if (file_exists($envPath)) {
 
         <!-- Progress Panel -->
         <div class="panel-card" id="progressPanel">
-          <div class="panel-title"><span class="ptdot"></span> Đang Xử Lý</div>
-          <div class="d-flex flex-column gap-2">
-            <div class="step-item" data-step="1">
-              <div class="step-icon-wrap">🔊</div>
-              <span>Upload & trích xuất âm thanh</span>
-            </div>
-            <div class="step-item" data-step="2">
-              <div class="step-icon-wrap">🤖</div>
-              <span>Gửi yêu cầu AssemblyAI</span>
-            </div>
-            <div class="step-item" data-step="3">
-              <div class="step-icon-wrap">⏱</div>
-              <span>Nhận dạng giọng nói &amp; căn thời gian</span>
-            </div>
-            <div class="step-item" data-step="4">
-              <div class="step-icon-wrap">🌐</div>
-              <span>Dịch thuật Gemini 1.5 Flash</span>
-            </div>
-            <div class="step-item" data-step="5">
-              <div class="step-icon-wrap">✅</div>
-              <span>Hoàn tất</span>
+
+          <!-- Header: title + timer -->
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="panel-title mb-0"><span class="ptdot"></span> Đang Xử Lý</div>
+            <div class="prog-timer-wrap">
+              <span class="prog-timer" id="progTimer">00:00</span>
             </div>
           </div>
-          <div class="progress-thin">
-            <div class="progress-fill" id="progressFill"></div>
+
+          <!-- Main progress bar -->
+          <div class="prog-bar-main-wrap mb-1">
+            <div class="prog-bar-main" id="progressFill">
+              <div class="prog-shimmer"></div>
+            </div>
           </div>
+          <div class="d-flex justify-content-between mb-3">
+            <span class="prog-pct-label" id="progPctLabel">0%</span>
+            <span class="prog-eta-label" id="progEtaLabel">Đang chuẩn bị…</span>
+          </div>
+
+          <!-- Steps -->
+          <div class="step-list-v2" id="stepListV2">
+
+            <div class="step-item-v2" data-step="1">
+              <div class="step-left">
+                <div class="step-node" id="stepNode1">
+                  <span class="step-emoji">🔊</span>
+                  <svg class="step-spinner" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5"/></svg>
+                  <span class="step-check">✓</span>
+                </div>
+                <div class="step-connector" id="stepConn1"></div>
+              </div>
+              <div class="step-body">
+                <div class="step-name">Upload video</div>
+                <div class="step-sub" id="stepSub1">Chờ bắt đầu…</div>
+                <div class="step-mini-bar-wrap" id="stepBar1" style="display:none">
+                  <div class="step-mini-bar" id="stepBarFill1"></div>
+                </div>
+              </div>
+              <div class="step-badge" id="stepBadge1"></div>
+            </div>
+
+            <div class="step-item-v2" data-step="2">
+              <div class="step-left">
+                <div class="step-node" id="stepNode2">
+                  <span class="step-emoji">🤖</span>
+                  <svg class="step-spinner" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5"/></svg>
+                  <span class="step-check">✓</span>
+                </div>
+                <div class="step-connector" id="stepConn2"></div>
+              </div>
+              <div class="step-body">
+                <div class="step-name">Gửi lên AssemblyAI</div>
+                <div class="step-sub" id="stepSub2">Chờ bắt đầu…</div>
+              </div>
+              <div class="step-badge" id="stepBadge2"></div>
+            </div>
+
+            <div class="step-item-v2" data-step="3">
+              <div class="step-left">
+                <div class="step-node" id="stepNode3">
+                  <span class="step-emoji">⏱</span>
+                  <svg class="step-spinner" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5"/></svg>
+                  <span class="step-check">✓</span>
+                </div>
+                <div class="step-connector" id="stepConn3"></div>
+              </div>
+              <div class="step-body">
+                <div class="step-name">Nhận dạng giọng nói</div>
+                <div class="step-sub" id="stepSub3">Chờ bắt đầu…</div>
+                <div class="step-mini-bar-wrap" id="stepBar3" style="display:none">
+                  <div class="step-mini-bar" id="stepBarFill3"></div>
+                </div>
+              </div>
+              <div class="step-badge" id="stepBadge3"></div>
+            </div>
+
+            <div class="step-item-v2" data-step="4">
+              <div class="step-left">
+                <div class="step-node" id="stepNode4">
+                  <span class="step-emoji">🌐</span>
+                  <svg class="step-spinner" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5"/></svg>
+                  <span class="step-check">✓</span>
+                </div>
+                <div class="step-connector" id="stepConn4"></div>
+              </div>
+              <div class="step-body">
+                <div class="step-name">Dịch thuật Gemini</div>
+                <div class="step-sub" id="stepSub4">Chờ bắt đầu…</div>
+              </div>
+              <div class="step-badge" id="stepBadge4"></div>
+            </div>
+
+            <div class="step-item-v2 last" data-step="5">
+              <div class="step-left">
+                <div class="step-node" id="stepNode5">
+                  <span class="step-emoji">🎉</span>
+                  <svg class="step-spinner" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke-width="2.5"/></svg>
+                  <span class="step-check">✓</span>
+                </div>
+              </div>
+              <div class="step-body">
+                <div class="step-name">Hoàn tất</div>
+                <div class="step-sub" id="stepSub5">Chờ bắt đầu…</div>
+              </div>
+              <div class="step-badge" id="stepBadge5"></div>
+            </div>
+
+          </div><!-- /step-list-v2 -->
         </div>
 
         <!-- Subtitles Panel -->
