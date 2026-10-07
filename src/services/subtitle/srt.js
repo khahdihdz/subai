@@ -1,0 +1,3 @@
+export function parseSrt(s){return s.replace(/^\uFEFF/,'').split(/\r?\n\r?\n+/).map(b=>{const l=b.split(/\r?\n/),i=l.findIndex(x=>/^\d+$/.test(x.trim())),t=i>=0?l[i+1]:l.find(x=>x.includes('-->'));if(!t)return null;const ti=l.indexOf(t);return{index:Number((i>=0?l[i]:'').trim())||0,start:t.split('-->')[0].trim(),end:t.split('-->')[1].trim(),text:l.slice(ti+1).join('\n').trim()}}).filter(Boolean)}
+export function toSrt(a){return a.map((x,i)=>`${x.index||i+1}\n${x.start} --> ${x.end}\n${x.text}\n`).join('\n')}
+export function parseVtt(s){const blocks=s.replace(/^WEBVTT[^\n]*\n/,'').trim().split(/\r?\n\r?\n+/);return parseSrt(blocks.map((b,i)=>`${i+1}\n${b.replace(/(\d{2}:\d{2})\.(\d{3})/g,'$1,$2')}`).join('\n\n'))}
