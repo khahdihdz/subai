@@ -1,0 +1,5 @@
+import {spawn} from 'node:child_process';
+export function run(cmd,args){return new Promise((resolve,reject)=>{const p=spawn(cmd,args,{stdio:['ignore','pipe','pipe']});let out='',err='';p.stdout.on('data',d=>out+=d);p.stderr.on('data',d=>{err+=d.toString();if(err.length>12000)err=err.slice(-12000)});p.on('error',reject);p.on('close',c=>c===0?resolve({out,err}):reject(new Error(`FFmpeg exit ${c}: ${err.slice(-4000)}`)))})}
+export const ffprobe=async f=>JSON.parse((await run('ffprobe',['-v','error','-show_entries','format=duration:format_name','-of','json',f])).out).format;
+export const extractAudio=(i,o)=>run('ffmpeg',['-y','-i',i,'-vn','-ac','1','-ar','16000','-c:a','pcm_s16le',o]);
+export const burn=(i,s,o,size=22)=>run('ffmpeg',['-y','-i',i,'-vf',`subtitles=${s.replaceAll('\\\\','\\\\\\\\').replaceAll(':','\\\\:')}:force_style='FontSize=${size},Outline=2,Shadow=1,MarginV=24'`,'-c:a','copy','-c:v','libx264','-preset','veryfast','-crf','23',o]);
