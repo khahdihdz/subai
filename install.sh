@@ -1,62 +1,80 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
 
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$APP_DIR"
+APP_DIR="/opt/subai"
+REPO_URL="https://github.com/khahdihdz/subai.git"
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "Hãy chạy script bằng root: sudo ./install.sh"
+  echo "ERROR: Chạy bằng root: sudo bash install.sh"
   exit 1
 fi
 
-echo "==> Cập nhật hệ thống"
-apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y curl ffmpeg ca-certificates git
+export DEBIAN_FRONTEND=noninteractive
 
-echo "==> Cài Node.js 20"
-if ! command -v node >/dev/null || [ "$(node -p 'process.versions.node.split(".")[0]')" -lt 20 ]; then
+echo "==> [1/7] Cập nhật hệ thống"
+apt-get update
+apt-get install -y --no-install-recommends ca-certificates curl git ffmpeg
+
+echo "==> [2/7] Cài Node.js 20"
+NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+if [ "$NODE_MAJOR" -lt 20 ]; then
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+  apt-get install -y nodejs
 fi
 
-echo "==> Kiểm tra Node/npm"
-node --version
-npm --version
-ffmpeg -version | head -n 1
+echo "==> [3/7] Chuẩn bị source"
+if [ ! -d "$APP_DIR/.git" ]; then
+  rm -rf "$APP_DIR"
+  git clone --depth 1 "$REPO_URL" "$APP_DIR"
+fi
+cd "$APP_DIR"
 
-echo "==> Cài dependencies"
-npm install --omit=dev
+echo "==> [4/7] Cài Node dependencies"
+npm install --omit=dev --no-audit --no-fund
 
-echo "==> Tạo storage"
+echo "==> [5/7] Chuẩn bị cấu hình và storage"
 mkdir -p storage/{uploads,audio,subtitles,voice,output,temp}
 chmod +x ./*.sh
-
-echo "==> Tạo .env"
 if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
-echo "==> Cấu hình systemd"
+echo "==> [6/7] Cấu hình systemd"
 install -m 644 subai.service /etc/systemd/system/subai.service
 systemctl daemon-reload
 systemctl enable subai
+systemctl restart subai
+
+echo "==> [7/7] Kiểm tra"
+sleep 2
+if ! systemctl is-active --quiet subai; then
+  echo "ERROR: SUBAI không khởi động được."
+  systemctl status subai --no-pager || true
+  journalctl -u subai -n 80 --no-pager || true
+  exit 1
+fi
+
+if ! curl -fsS http://127.0.0.1:3000/health >/dev/null; then
+  echo "ERROR: SUBAI chạy nhưng health check thất bại."
+  journalctl -u subai -n 80 --no-pager || true
+  exit 1
+fi
 
 echo
 echo "=========================================="
-echo " SUBAI INSTALL HOÀN TẤT"
+echo " SUBAI CÀI ĐẶT THÀNH CÔNG"
 echo "=========================================="
-echo "1. Sửa API key:"
-echo "   nano $APP_DIR/.env"
+echo "App:       http://127.0.0.1:3000"
+echo "Health:    http://127.0.0.1:3000/health"
+echo "Directory: $APP_DIR"
 echo
-echo "2. Khởi động:"
-echo "   systemctl start subai"
+echo "VPS:       2 CPU / 2 GB RAM / 25 GB NVMe"
+echo "Upload:    1 GB"
+echo "Duration:  3 giờ"
+echo "Queue:     1 video/job"
 echo
-echo "3. Kiểm tra:"
-echo "   systemctl status subai --no-pager"
-echo "   curl http://127.0.0.1:3000/health"
+echo "Sửa API key:"
+echo "  nano $APP_DIR/.env"
 echo
-echo "4. Log:"
-echo "   journalctl -u subai -f"
-echo
-echo "VPS khuyến nghị: 2 CPU / 2 GB RAM / 25 GB NVMe"
-echo "Upload tối đa: 1 GB | Video tối đa: 3 giờ"
+echo "Log:"
+echo "  journalctl -u subai -f"
