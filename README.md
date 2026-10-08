@@ -1,4 +1,4 @@
-# SUBAI — AI Video Translator
+# SUBAI — AI Video Translator — Frontend + Backend
 
 Web app dịch video AI tối ưu cho VPS **2 CPU / 2 GB RAM / 25 GB NVMe / NAT**, dùng FFmpeg + API AI bên ngoài, không chạy AI local.
 
@@ -21,6 +21,7 @@ Khuyến nghị cho VPS **2 CPU / 2 GB RAM / 25 GB NVMe**:
 MAX_FILE_SIZE=1073741824
 MAX_VIDEO_DURATION=10800
 MAX_CONCURRENT_JOBS=1
+MIN_FREE_DISK=6442450944
 AI_TIMEOUT_MS=180000
 HOST=127.0.0.1
 PORT=3000
