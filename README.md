@@ -15,7 +15,7 @@ Web app dịch video AI tối ưu cho VPS **2 CPU / 2 GB RAM / NAT**, dùng FFmp
 
 ## Cấu hình VPS hiện tại
 
-Khuyến nghị cho VPS **2 CPU / 2 GB RAM / 15 GB NVMe**:
+Khuyến nghị cho VPS **2 CPU / 2 GB RAM / 25 GB NVMe**:
 
 ```env
 MAX_FILE_SIZE=838860800
@@ -76,7 +76,7 @@ POST /api/jobs · GET /api/jobs · GET /api/jobs/:id · POST /api/jobs/:id/cance
 
 ## Disk 15 GB
 
-Giới hạn upload 800 MB là lựa chọn cân bằng. Khi burn video, đồng thời có thể tồn tại video gốc, audio, subtitle, file tạm và output; vì vậy không nên coi 15 GB là toàn bộ dung lượng dành cho video.
+Giới hạn upload 1 GB là lựa chọn cân bằng. Khi burn video, đồng thời có thể tồn tại video gốc, audio, subtitle, file tạm và output; vì vậy không nên coi 15 GB là toàn bộ dung lượng dành cho video.
 
 Nên giữ ít nhất **4 GB trống** trước khi chạy job lớn và chạy:
 
