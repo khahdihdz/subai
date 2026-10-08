@@ -5,5 +5,5 @@ services:
     env_file: .env
     ports: ["127.0.0.1:3000:3000"]
     volumes: ["./storage:/app/storage"]
-    mem_limit: 450m
-    cpus: 1.0
+    mem_limit: 1536m
+    cpus: 2.0
