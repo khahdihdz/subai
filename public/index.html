@@ -1,1 +1,19 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SUBAI — Dịch video AI</title><link rel="stylesheet" href="/css/app.css"></head><body><main><header><div><h1>SUBAI</h1><p>Dịch video AI cho VPS tài nguyên thấp</p></div><b id="health">●</b></header><section class="card"><h2>Tải video</h2><label class="drop">Chọn video <input id="file" type="file" accept="video/*"></label><div class="grid"><label>Chế độ<select id="mode"><option value="translate">Chỉ dịch subtitle</option><option value="burn">Dịch + burn subtitle</option><option value="dub">Dịch + TTS + burn subtitle</option></select></label><label>Cỡ chữ<input id="font" type="number" value="22" min="10" max="80"></label></div><button id="go">Bắt đầu</button></section><section class="card"><h2>Tiến trình</h2><div class="bar"><i id="bar"></i></div><p id="status">Chưa có job</p><pre id="error"></pre></section><section class="card"><h2>Kết quả</h2><div id="files"></div></section></main><script src="/js/app.js"></script></body></html>
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1220"><title>SUBAI — AI Video Translator</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><div class="shell">
+<header class="top"><div><div class="brand">SUB<span>AI</span></div><p>AI Video Translator</p></div><div class="online"><i id="health"></i><span id="healthText">Đang kiểm tra</span></div></header>
+<section class="hero"><h1>Dịch video sang tiếng Việt</h1><p>Upload video, nhận dạng giọng nói, dịch AI, TTS và burn phụ đề ngay trên VPS.</p></section>
+<section class="layout">
+<div>
+<div class="card upload-card"><div class="card-head"><div><b>1. Video nguồn</b><small>Tối đa 1 GB · tối đa 3 giờ</small></div></div>
+<label id="drop" class="drop"><input id="file" type="file" accept="video/*"><div class="upload-icon">↑</div><strong>Kéo thả video vào đây</strong><span>hoặc bấm để chọn file</span><em id="fileName">Chưa chọn file</em></label></div>
+<div class="card"><div class="card-head"><b>2. Tùy chọn xử lý</b></div>
+<div class="modes"><label><input type="radio" name="mode" value="translate" checked><span><strong>Dịch subtitle</strong><small>STT + dịch AI</small></span></label><label><input type="radio" name="mode" value="burn"><span><strong>Dịch + Burn</strong><small>Nhúng subtitle vào video</small></span></label><label><input type="radio" name="mode" value="dub"><span><strong>Dịch + Lồng tiếng</strong><small>TTS + audio + subtitle</small></span></label></div>
+<div class="settings"><label>Cỡ chữ<input id="font" type="number" min="10" max="80" value="22"></label><label>Độ dày viền<input id="outline" type="number" min="0" max="8" value="2"></label><label>Lề dưới<input id="margin" type="number" min="0" max="200" value="24"></label></div>
+<button id="go" class="primary">Bắt đầu xử lý</button><button id="cancel" class="danger" hidden>Hủy job</button></div>
+</div>
+<aside>
+<div class="card"><div class="card-head"><b>Tiến trình</b><strong id="percent">0%</strong></div><div class="bar"><i id="bar"></i></div><p id="status">Chưa có job</p><pre id="error"></pre></div>
+<div class="card"><div class="card-head"><b>Subtitle</b><span id="subState">Chưa có</span></div><textarea id="subtitle" placeholder="Subtitle sẽ xuất hiện tại đây..."></textarea><div class="actions"><button id="saveSub">Lưu subtitle</button><button id="loadSub">Tải lại</button></div></div>
+<div class="card"><div class="card-head"><b>Kết quả</b></div><div id="files" class="files"><span>Chưa có file</span></div></div>
+</aside></section></div><script src="/js/app.js"></script></body></html>
