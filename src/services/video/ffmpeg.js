@@ -19,4 +19,4 @@ export function subtitleFilter(s,size=22,color='&H00FFFFFF',outline=2,margin=24)
   return `subtitles='${esc}':force_style='FontName=DejaVu Sans,FontSize=${size},PrimaryColour=${color},OutlineColour=&H00000000,Outline=${outline},Shadow=1,MarginV=${margin}'`;
 }
 export const burn=(i,s,o,opts={},runOpts={})=>run('ffmpeg',['-y','-i',i,'-vf',subtitleFilter(s,opts.fontSize||22,opts.color||'&H00FFFFFF',opts.outline||2,opts.marginV||24),'-c:v','libx264','-preset','veryfast','-crf',String(opts.crf||23),'-c:a','copy',o],runOpts);
-export const mixAudio=(video,voice,out,replace=false,opts={})=>run('ffmpeg',['-y','-i',video,'-i',voice,'-map','0:v:0','-map',replace?'1:a:0':'0:a:0?','-c:v','copy','-c:a','aac','-shortest',out],opts);
+export const mixAudio=(video,voice,out,replace=false,opts={})=>run('ffmpeg',['-y','-i',video,'-i',voice,'-map','0:v:0','-map',replace?'1:a:0':'0:a:0?','-c:v','copy' ,'-c:a','aac',out],opts);
