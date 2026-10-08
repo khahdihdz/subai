@@ -1,6 +1,6 @@
 # SUBAI — AI Video Translator
 
-Web app dịch video AI tối ưu cho VPS **2 CPU / 2 GB RAM / NAT**, dùng FFmpeg + API AI bên ngoài, không chạy AI local.
+Web app dịch video AI tối ưu cho VPS **2 CPU / 2 GB RAM / 25 GB NVMe / NAT**, dùng FFmpeg + API AI bên ngoài, không chạy AI local.
 
 ## Stack
 - Node.js 20 + Fastify
@@ -18,7 +18,7 @@ Web app dịch video AI tối ưu cho VPS **2 CPU / 2 GB RAM / NAT**, dùng FFmp
 Khuyến nghị cho VPS **2 CPU / 2 GB RAM / 25 GB NVMe**:
 
 ```env
-MAX_FILE_SIZE=838860800
+MAX_FILE_SIZE=1073741824
 MAX_VIDEO_DURATION=10800
 MAX_CONCURRENT_JOBS=1
 AI_TIMEOUT_MS=180000
@@ -27,7 +27,7 @@ PORT=3000
 OPENROUTER_MODEL=openrouter/auto
 ```
 
-Không nên tăng `MAX_CONCURRENT_JOBS` lên 2 chỉ vì VPS có 2 CPU: burn/encode video có thể chiếm CPU và tạo nhiều file tạm, trong khi RAM và đặc biệt là disk 15 GB là giới hạn thực tế. Có thể tăng sau khi đo tải thực tế.
+Không nên tăng `MAX_CONCURRENT_JOBS` lên 2 chỉ vì VPS có 2 CPU: burn/encode video có thể chiếm CPU và tạo nhiều file tạm, trong khi RAM và đặc biệt là disk 25 GB là giới hạn thực tế. Có thể tăng sau khi đo tải thực tế.
 
 ## Cài đặt Z-Ubuntu
 
@@ -74,19 +74,36 @@ POST /api/jobs · GET /api/jobs · GET /api/jobs/:id · POST /api/jobs/:id/cance
 - Docker giới hạn 1.5 GB RAM và 2 CPU.
 - File tạm cần được dọn định kỳ bằng `cleanup.sh`.
 
-## Disk 15 GB
+## Disk 25 GB
 
-Giới hạn upload 1 GB là lựa chọn cân bằng. Khi burn video, đồng thời có thể tồn tại video gốc, audio, subtitle, file tạm và output; vì vậy không nên coi 15 GB là toàn bộ dung lượng dành cho video.
+Giới hạn upload 1 GB là lựa chọn cân bằng. Khi burn video, đồng thời có thể tồn tại video gốc, audio, subtitle, file tạm và output; vì vậy không nên coi 25 GB là toàn bộ dung lượng dành cho video.
 
-Nên giữ ít nhất **4 GB trống** trước khi chạy job lớn và chạy:
+Nên giữ ít nhất **6 GB trống** trước khi chạy job lớn và chạy:
 
 ```bash
 ./cleanup.sh
 df -h
 ```
 
-Nếu cần xử lý video lớn hơn 800 MB hoặc dài hơn 3 giờ, nên nâng disk trước khi tăng các giới hạn.
+Nếu cần xử lý video lớn hơn 1 GB hoặc dài hơn 3 giờ, nên nâng disk trước khi tăng các giới hạn.
 
 ## Lưu ý
 
 Burn video bằng FFmpeg là công đoạn CPU/I/O nặng nhất. Với video dài, hãy tăng timeout của reverse proxy/tunnel nếu cần.
+
+
+## Cài đặt một lệnh
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/khahdihdz/subai/main/install.sh | sudo bash
+```
+
+Installer tự động cài FFmpeg, Node.js 20, dependencies, tạo storage, cấu hình systemd và kiểm tra endpoint /health.
+
+Sau khi cài, cấu hình API key:
+
+```bash
+nano /opt/subai/.env
+systemctl restart subai
+curl http://127.0.0.1:3000/health
+```
