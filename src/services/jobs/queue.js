@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import {statfs} from 'node:fs';
 import {openAsBlob} from 'node:fs';
 import path from 'node:path';
 import {config,dirs} from '../../config/config.js';
@@ -57,7 +58,7 @@ export function processJob(id,input,opt={}){
   const controller=new AbortController();controllers.set(id,controller);
   enqueue(async()=>{
     try{
-      updateJob(id,{status:'processing',progress:2,error:null});emit(id,{progress:2,status:'Đang kiểm tra video'});assertActive(id);
+      updateJob(id,{status:'processing',progress:2,error:null});emit(id,{progress:2,status:'Đang kiểm tra video'});assertActive(id);const disk=await statfs(config.storage);const free=disk.bavail*disk.bsize;if(free<config.minFreeDisk)throw new Error('Disk còn quá ít, cần tối thiểu 6 GB trống');
       const meta=await ffprobe(input);const duration=Number(meta.duration||0);
       if(!duration)throw new Error('Không đọc được thời lượng video');
       if(duration>config.maxDuration)throw new Error('Video vượt quá thời lượng cho phép');
@@ -75,7 +76,7 @@ export function processJob(id,input,opt={}){
       if(opt.burn){updateJob(id,{progress:85});emit(id,{progress:85,status:'Đang burn subtitle'});const out=path.join(dirs.output,id+'_subbed.mp4');await burn(video,srt,out,opt,{signal:controller.signal});if(video!==input)await fs.rm(video,{force:true});video=out;outs.push(out)}
       assertActive(id);updateJob(id,{status:'completed',progress:100,output_files:JSON.stringify(outs)});emit(id,{progress:100,status:'Hoàn thành',files:outs});
     }catch(e){if(e.message==='JOB_CANCELLED'||getJob(id)?.status==='cancelled'){updateJob(id,{status:'cancelled',error:'Job đã bị hủy'});emit(id,{status:'Đã hủy',error:'Job đã bị hủy'})}else{updateJob(id,{status:'failed',error:e.message});emit(id,{status:'Lỗi',error:e.message})}}
-    finally{controllers.delete(id)}
+    finally{controllers.delete(id);try{await fs.rm(path.join(dirs.audio,id+'.wav'),{force:true});for(const n of await fs.readdir(dirs.voice)){if(n.startsWith(id+'_')&&/\.mp3$/.test(n))await fs.rm(path.join(dirs.voice,n),{force:true})}await fs.rm(path.join(dirs.temp,id+'_tts.txt'),{force:true})}catch{}}
   });
 }
 export function cancelJob(id){const c=controllers.get(id);updateJob(id,{status:'cancelled'});if(c)c.abort();emit(id,{status:'Đã hủy',error:'Job đã bị hủy'});return true}
