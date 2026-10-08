@@ -76,7 +76,7 @@ export function processJob(id,input,opt={}){
       if(opt.burn){updateJob(id,{progress:85});emit(id,{progress:85,status:'Đang burn subtitle'});const out=path.join(dirs.output,id+'_subbed.mp4');await burn(video,srt,out,opt,{signal:controller.signal});if(video!==input)await fs.rm(video,{force:true});video=out;outs.push(out)}
       assertActive(id);updateJob(id,{status:'completed',progress:100,output_files:JSON.stringify(outs)});emit(id,{progress:100,status:'Hoàn thành',files:outs});
     }catch(e){if(e.message==='JOB_CANCELLED'||getJob(id)?.status==='cancelled'){updateJob(id,{status:'cancelled',error:'Job đã bị hủy'});emit(id,{status:'Đã hủy',error:'Job đã bị hủy'})}else{updateJob(id,{status:'failed',error:e.message});emit(id,{status:'Lỗi',error:e.message})}}
-    finally{controllers.delete(id);try{await fs.rm(path.join(dirs.audio,id+'.wav'),{force:true});for(const n of await fs.readdir(dirs.voice)){if(n.startsWith(id+'_')&&/\.mp3$/.test(n))await fs.rm(path.join(dirs.voice,n),{force:true})}await fs.rm(path.join(dirs.temp,id+'_tts.txt'),{force:true})}catch{}}
+    finally{controllers.delete(id);try{await fs.rm(path.join(dirs.audio,id+'.wav'),{force:true});for(const n of await fs.readdir(dirs.voice)){if(n.startsWith(id+'_')&&n!==id+'_vi.mp3'&&/\.mp3$/.test(n))await fs.rm(path.join(dirs.voice,n),{force:true})}await fs.rm(path.join(dirs.temp,id+'_tts.txt'),{force:true})}catch{}}
   });
 }
 export function cancelJob(id){const c=controllers.get(id);updateJob(id,{status:'cancelled'});if(c)c.abort();emit(id,{status:'Đã hủy',error:'Job đã bị hủy'});return true}
