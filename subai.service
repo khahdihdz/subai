@@ -1,14 +1,17 @@
 [Unit]
 Description=SUBAI AI Video Translator
 After=network.target
+
 [Service]
 Type=simple
 WorkingDirectory=/opt/subai
 EnvironmentFile=/opt/subai/.env
+Environment=NODE_OPTIONS=--max-old-space-size=768
 ExecStart=/usr/bin/node /opt/subai/src/server.js
 Restart=always
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
+
 [Install]
 WantedBy=multi-user.target
