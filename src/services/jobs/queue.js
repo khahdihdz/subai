@@ -65,7 +65,7 @@ export function processJob(id,input,opt={}){
       const audio=path.join(dirs.audio,id+'.wav');await extractAudio(input,audio,{signal:controller.signal});assertActive(id);
       updateJob(id,{progress:18});emit(id,{progress:18,status:'Đang nhận dạng giọng nói'});
       const source=path.join(dirs.subtitles,id+'_source.srt');
-      let subs=await fs.access(source).then(()=>parseSrt(await fs.readFile(source,'utf8'))).catch(()=>stt(audio));
+      let subs; try { await fs.access(source); subs=parseSrt(await fs.readFile(source,'utf8')); } catch { subs=await stt(audio); }
       if(!subs.length)throw new Error('Không có subtitle để xử lý');
       updateJob(id,{progress:30});emit(id,{progress:30,status:`Đang dịch ${subs.length} đoạn`});
       for(let i=0;i<subs.length;i+=20){assertActive(id);const b=await translateBatch(subs.slice(i,i+20));subs.splice(i,b.length,...b);const p=30+Math.round(Math.min(i+b.length,subs.length)/subs.length*35);updateJob(id,{progress:p});emit(id,{progress:p,status:`Đang dịch ${Math.min(i+b.length,subs.length)}/${subs.length}`})}
