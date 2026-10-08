@@ -5,5 +5,5 @@ COPY package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 COPY . .
 RUN mkdir -p storage/{uploads,audio,subtitles,voice,output,temp}
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 NODE_OPTIONS=--max-old-space-size=768
 CMD ["node","src/server.js"]
